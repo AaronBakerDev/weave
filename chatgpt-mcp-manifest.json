@@ -1,0 +1,421 @@
+{
+  "schema_version": "1.0",
+  "name": "Weave Memory System",
+  "description": "A conversational interface to the Weave layered memory system. Weave allows you to create rich, multi-layered memories that evolve over time, with support for narrative cores, contextual layers, and associative connections.",
+  "version": "0.1.0",
+  "tools": [
+    {
+      "name": "create_memory",
+      "description": "Create a new memory in Weave. This is the first step - you create a blank memory that you can then build upon with a narrative core and additional layers.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "description": "A short, meaningful title for this memory (e.g., 'First day at the beach', 'Project kickoff meeting')"
+          }
+        },
+        "required": ["title"]
+      },
+      "responseSchema": {
+        "type": "object",
+        "properties": {
+          "memory_id": {
+            "type": "string",
+            "description": "The unique ID of the newly created memory"
+          },
+          "title": {
+            "type": "string",
+            "description": "The title of the memory"
+          },
+          "created_at": {
+            "type": "string",
+            "description": "ISO timestamp when the memory was created"
+          }
+        }
+      }
+    },
+    {
+      "name": "set_core",
+      "description": "Set or update the narrative core of a memory. The core is the essential story - what happened, how you felt, what it meant. You can include anchors (locations, times) and people involved. Use 'lift: true' to create a new draft version while preserving history.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "memory_id": {
+            "type": "string",
+            "description": "The ID of the memory to update"
+          },
+          "narrative": {
+            "type": "string",
+            "description": "The core story or description of this memory. This should capture the essence of the moment."
+          },
+          "anchors": {
+            "type": "array",
+            "description": "Optional: Places, times, or contextual markers that ground this memory",
+            "items": {
+              "type": "object",
+              "properties": {
+                "kind": {
+                  "type": "string",
+                  "enum": ["LOCATION", "TIME", "CONTEXT"],
+                  "description": "Type of anchor"
+                },
+                "value": {
+                  "type": "string",
+                  "description": "The anchor value (e.g., 'Santa Monica Beach', '2024-03-15', 'during sunset')"
+                }
+              },
+              "required": ["kind", "value"]
+            }
+          },
+          "people": {
+            "type": "array",
+            "description": "Optional: People who were part of this memory",
+            "items": {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "type": "string",
+                  "description": "Person's name"
+                },
+                "role": {
+                  "type": "string",
+                  "description": "Their role or relationship (e.g., 'friend', 'colleague', 'family')"
+                }
+              },
+              "required": ["name"]
+            }
+          },
+          "lift": {
+            "type": "boolean",
+            "description": "If true, creates a new draft version of the core while preserving the previous version. Use this when updating an already-locked core.",
+            "default": false
+          }
+        },
+        "required": ["memory_id", "narrative"]
+      },
+      "responseSchema": {
+        "type": "object",
+        "properties": {
+          "memory_id": {
+            "type": "string"
+          },
+          "core": {
+            "type": "object",
+            "description": "The updated core narrative"
+          }
+        }
+      }
+    },
+    {
+      "name": "lock_core",
+      "description": "Lock the core narrative of a memory, making it immutable. This commits the story as-is. After locking, any changes require 'lifting' to create a new draft version.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "memory_id": {
+            "type": "string",
+            "description": "The ID of the memory whose core should be locked"
+          }
+        },
+        "required": ["memory_id"]
+      },
+      "responseSchema": {
+        "type": "object",
+        "properties": {
+          "memory_id": {
+            "type": "string"
+          },
+          "locked": {
+            "type": "boolean",
+            "description": "Confirmation that the core is now locked"
+          }
+        }
+      }
+    },
+    {
+      "name": "append_layer",
+      "description": "Add a new layer to a memory. Layers can be text reflections, images, links, or other content types. They add depth and context over time without modifying the core narrative.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "memory_id": {
+            "type": "string",
+            "description": "The ID of the memory to add a layer to"
+          },
+          "kind": {
+            "type": "string",
+            "enum": ["TEXT", "IMAGE", "LINK", "ARTIFACT"],
+            "description": "The type of layer being added"
+          },
+          "text_content": {
+            "type": "string",
+            "description": "For TEXT layers: the actual text content (reflection, update, note)"
+          },
+          "artifact_id": {
+            "type": "string",
+            "description": "For IMAGE/ARTIFACT layers: the ID of a previously uploaded artifact"
+          },
+          "url": {
+            "type": "string",
+            "description": "For LINK layers: the URL to link to"
+          },
+          "metadata": {
+            "type": "object",
+            "description": "Optional metadata for the layer",
+            "additionalProperties": true
+          }
+        },
+        "required": ["memory_id", "kind"]
+      },
+      "responseSchema": {
+        "type": "object",
+        "properties": {
+          "layer_id": {
+            "type": "string",
+            "description": "The ID of the newly created layer"
+          },
+          "memory_id": {
+            "type": "string"
+          },
+          "kind": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    {
+      "name": "search_associative",
+      "description": "Search for memories using natural language. The system finds memories semantically related to your query, not just keyword matches. Great for 'remind me about times when...' or 'find memories related to...' queries.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "query": {
+            "type": "string",
+            "description": "Natural language search query (e.g., 'beach trips with friends', 'moments of breakthrough', 'meetings about the new product')"
+          },
+          "limit": {
+            "type": "number",
+            "description": "Maximum number of results to return (default: 10)",
+            "default": 10
+          }
+        },
+        "required": ["query"]
+      },
+      "responseSchema": {
+        "type": "object",
+        "properties": {
+          "results": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "memory_id": {
+                  "type": "string"
+                },
+                "title": {
+                  "type": "string"
+                },
+                "narrative": {
+                  "type": "string",
+                  "description": "Excerpt or full narrative"
+                },
+                "score": {
+                  "type": "number",
+                  "description": "Relevance score"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "weave",
+      "description": "Create a connection (weave) between two memories. Weaving links related memories together, showing how experiences connect and influence each other. Specify the relationship type and optionally why they're connected.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "from_memory_id": {
+            "type": "string",
+            "description": "The ID of the first memory in the connection"
+          },
+          "to_memory_id": {
+            "type": "string",
+            "description": "The ID of the second memory in the connection"
+          },
+          "relation_type": {
+            "type": "string",
+            "description": "The type of relationship (e.g., 'inspired_by', 'followed_up', 'relates_to', 'contradicts')",
+            "default": "relates_to"
+          },
+          "note": {
+            "type": "string",
+            "description": "Optional: Why these memories are connected"
+          }
+        },
+        "required": ["from_memory_id", "to_memory_id"]
+      },
+      "responseSchema": {
+        "type": "object",
+        "properties": {
+          "weave_id": {
+            "type": "string",
+            "description": "The ID of the connection"
+          },
+          "from_memory_id": {
+            "type": "string"
+          },
+          "to_memory_id": {
+            "type": "string"
+          },
+          "relation_type": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    {
+      "name": "set_permissions",
+      "description": "Control who can view or edit a memory. Set it to private, share with specific people, or make it public. This respects your privacy while enabling selective sharing.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "memory_id": {
+            "type": "string",
+            "description": "The ID of the memory to set permissions for"
+          },
+          "visibility": {
+            "type": "string",
+            "enum": ["PRIVATE", "SHARED", "PUBLIC"],
+            "description": "Overall visibility level"
+          },
+          "allowed_users": {
+            "type": "array",
+            "description": "For SHARED visibility: list of user IDs who can access this memory",
+            "items": {
+              "type": "string"
+            }
+          },
+          "allow_edit": {
+            "type": "boolean",
+            "description": "Whether shared users can edit (add layers) or only view",
+            "default": false
+          }
+        },
+        "required": ["memory_id", "visibility"]
+      },
+      "responseSchema": {
+        "type": "object",
+        "properties": {
+          "memory_id": {
+            "type": "string"
+          },
+          "permissions": {
+            "type": "object",
+            "description": "The updated permission settings"
+          }
+        }
+      }
+    }
+  ],
+  "usage_examples": [
+    {
+      "description": "Capturing a simple moment",
+      "steps": [
+        {
+          "tool": "create_memory",
+          "params": {
+            "title": "Coffee chat with Sarah"
+          }
+        },
+        {
+          "tool": "set_core",
+          "params": {
+            "memory_id": "<from_previous_step>",
+            "narrative": "Had a great conversation with Sarah about her new startup idea. She's thinking about AI for education and wanted my feedback on the technical feasibility. I suggested starting with a specific use case rather than trying to solve everything at once.",
+            "people": [
+              {
+                "name": "Sarah",
+                "role": "friend"
+              }
+            ],
+            "anchors": [
+              {
+                "kind": "LOCATION",
+                "value": "Bluestone Lane Cafe"
+              },
+              {
+                "kind": "TIME",
+                "value": "2024-10-20"
+              }
+            ]
+          }
+        },
+        {
+          "tool": "lock_core",
+          "params": {
+            "memory_id": "<memory_id>"
+          }
+        }
+      ]
+    },
+    {
+      "description": "Adding reflection later",
+      "steps": [
+        {
+          "tool": "append_layer",
+          "params": {
+            "memory_id": "<existing_memory_id>",
+            "kind": "TEXT",
+            "text_content": "Reflecting on this conversation a week later - Sarah actually went ahead and built a prototype! Her energy is contagious. Makes me think about my own side projects."
+          }
+        }
+      ]
+    },
+    {
+      "description": "Connecting related memories",
+      "steps": [
+        {
+          "tool": "search_associative",
+          "params": {
+            "query": "startup conversations"
+          }
+        },
+        {
+          "tool": "weave",
+          "params": {
+            "from_memory_id": "<memory_id_1>",
+            "to_memory_id": "<memory_id_2>",
+            "relation_type": "inspired_by",
+            "note": "Both conversations about taking the leap into entrepreneurship"
+          }
+        }
+      ]
+    }
+  ],
+  "conversational_patterns": {
+    "capture": [
+      "Remember this moment: [description]",
+      "Save this memory: [title]",
+      "I want to remember that [event]",
+      "Capture this: [narrative]"
+    ],
+    "reflect": [
+      "Add to my memory about [topic]: [reflection]",
+      "Update my thought on [memory]: [new perspective]",
+      "Looking back at [memory], I realize [insight]"
+    ],
+    "recall": [
+      "Remind me about [topic]",
+      "What do I have saved about [subject]?",
+      "Find my memories related to [query]",
+      "Show me when I thought about [concept]"
+    ],
+    "connect": [
+      "This reminds me of [other memory]",
+      "Connect [memory 1] and [memory 2]",
+      "Link this to my memory about [topic]"
+    ]
+  }
+}

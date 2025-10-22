@@ -1,0 +1,53 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen",
+    "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue",
+    sans-serif;
+  background-color: #fafafa;
+}
+
+/* Canvas */
+canvas {
+  display: block;
+  background-color: white;
+}
+
+/* Emotion color utilities */
+.emotion-joy {
+  color: #ffd700;
+}
+.emotion-sadness {
+  color: #4169e1;
+}
+.emotion-wonder {
+  color: #9370db;
+}
+.emotion-calm {
+  color: #3cb371;
+}
+.emotion-fear {
+  color: #ff6347;
+}
+.emotion-love {
+  color: #ff69b4;
+}
+.emotion-grief {
+  color: #696969;
+}
+.emotion-anger {
+  color: #dc143c;
+}

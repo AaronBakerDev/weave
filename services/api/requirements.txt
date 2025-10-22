@@ -1,0 +1,16 @@
+fastapi==0.115.2
+uvicorn==0.30.6
+pydantic==2.9.2
+python-dotenv==1.0.1
+psycopg[binary]==3.2.3
+psycopg2-binary==2.9.10
+SQLAlchemy==2.0.35
+alembic==1.13.2
+boto3==1.35.25
+python-multipart==0.0.9
+pgvector==0.2.5
+orjson==3.10.7
+PyJWT==2.9.0
+cryptography==43.0.1
+requests==2.32.3
+openai==1.51.2

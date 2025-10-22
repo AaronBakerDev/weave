@@ -1,0 +1,36 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    environment:
+      POSTGRES_USER: weave_user
+      POSTGRES_PASSWORD: weave_password
+      POSTGRES_DB: weave
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U weave_user -d weave"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  python-backend:
+    build: .
+    environment:
+      DATABASE_URL: postgresql+asyncpg://weave_user:weave_password@postgres:5432/weave
+      ENVIRONMENT: development
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./app:/app/app
+    command: python -m uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+
+volumes:
+  postgres_data:
