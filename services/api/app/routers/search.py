@@ -104,18 +104,43 @@ async def search_associative(
             with q as (
               select websearch_to_tsquery('english', :q) as qtsv,
                      (:qemb)::vector(1536) as qemb
+            ),
+            base_scores as (
+              select m.id,
+                     (1 - coalesce(m.embedding <=> q.qemb, 1)) as vec_sim,
+                     coalesce(ts_rank_cd(m.tsv, q.qtsv), 0) as text_rank
+              from memory m
+              cross join q
+              where coalesce(m.status, 'ACTIVE') <> 'DELETED'
+            ),
+            edge_boost as (
+              select m.id,
+                     coalesce(
+                       (select avg(bs.vec_sim * e.strength)
+                        from memory_edge e
+                        join base_scores bs on (
+                          (e.a_memory_id = m.id and bs.id = e.b_memory_id) or
+                          (e.b_memory_id = m.id and bs.id = e.a_memory_id)
+                        )
+                        where (e.a_memory_id = m.id or e.b_memory_id = m.id)
+                       ), 0
+                     ) as boost
+              from memory m
+              where coalesce(m.status, 'ACTIVE') <> 'DELETED'
             )
             select m.id, m.title, m.visibility, m.created_at,
                    (
-                     0.55 * (1 - coalesce(m.embedding <=> q.qemb, 1)) +
-                     0.35 * coalesce(ts_rank_cd(m.tsv, q.qtsv), 0) +
-                     0.10 * 0
+                     0.55 * bs.vec_sim +
+                     0.35 * bs.text_rank +
+                     0.10 * eb.boost
                    ) as score,
-                   (1 - coalesce(m.embedding <=> q.qemb, 1)) as vec_sim,
-                   coalesce(ts_rank_cd(m.tsv, q.qtsv), 0) as text_rank,
+                   bs.vec_sim,
+                   bs.text_rank,
                    ts_headline('english', coalesce(m.title, ''), q.qtsv, 'MaxWords=10') as title_hl
             from memory m
             cross join q
+            join base_scores bs on bs.id = m.id
+            join edge_boost eb on eb.id = m.id
             where coalesce(m.status, 'ACTIVE') <> 'DELETED'
             order by score desc
             limit :limit

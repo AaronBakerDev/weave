@@ -35,7 +35,7 @@ export default function Home() {
   }, []);
 
   return (
-    <main className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50">
+    <main className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50 pt-20">
       {/* Hero Section */}
       <div className="relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-primary-50 to-purple-50 opacity-30"></div>

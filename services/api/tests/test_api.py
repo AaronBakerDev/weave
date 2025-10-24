@@ -42,4 +42,3 @@ def test_create_memory_flow(monkeypatch):
     data = r.json()
     assert data['id'] == mid
     assert len(data['layers']) >= 1
-

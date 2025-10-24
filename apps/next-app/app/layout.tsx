@@ -14,6 +14,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { Providers } from "./providers";
+import { ClerkProvider, SignInButton, SignUpButton, SignedIn, SignedOut, UserButton } from '@clerk/nextjs';
 
 export const metadata: Metadata = {
   title: "Weave - Memory Canvas",
@@ -26,7 +27,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
+    <ClerkProvider>
+      <html lang="en">
       <head>
         {/* Patch 1: Set base URL for asset loading in ChatGPT sandbox */}
         <base href={process.env.NEXT_PUBLIC_ASSET_PREFIX || "/"} />
@@ -121,6 +123,17 @@ export default function RootLayout({
                 <a href="/canvas" className="text-blue-700 hover:underline">Canvas</a>
                 <a href="/search" className="text-blue-700 hover:underline">Search</a>
                 <a href="/u/demo" className="text-gray-700 hover:underline">Profile</a>
+                <SignedOut>
+                  <SignInButton mode="modal">
+                    <button className="text-blue-700 hover:underline">Sign In</button>
+                  </SignInButton>
+                  <SignUpButton mode="modal">
+                    <button className="bg-blue-600 text-white px-4 py-1.5 rounded-md hover:bg-blue-700">Sign Up</button>
+                  </SignUpButton>
+                </SignedOut>
+                <SignedIn>
+                  <UserButton afterSignOutUrl="/" />
+                </SignedIn>
               </nav>
             </div>
           </header>
@@ -128,5 +141,6 @@ export default function RootLayout({
         </Providers>
       </body>
     </html>
+    </ClerkProvider>
   );
 }

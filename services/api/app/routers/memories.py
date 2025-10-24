@@ -25,6 +25,54 @@ from ..db.models_orm import AppUser, Memory, Participant, MemoryLayer, Idempoten
 router = APIRouter(prefix="/v1/memories", tags=["memories"])
 
 
+@router.get("")
+async def list_memories(
+    limit: int = 20,
+    user_id: UUID = Depends(get_user_id),
+    db: Session = Depends(db_session),
+):
+    """List recent memories for the current user"""
+    limit = max(1, min(limit, 100))
+
+    # Get memories where user is a participant
+    memories = db.execute(
+        select(Memory)
+        .join(Participant, Memory.id == Participant.memory_id)
+        .where(
+            Participant.user_id == user_id,
+            Memory.status != "DELETED"
+        )
+        .order_by(Memory.created_at.desc())
+        .limit(limit)
+    ).scalars().all()
+
+    result = []
+    for mem in memories:
+        # Get the core if it exists
+        core_version = db.execute(
+            select(MemoryCoreVersion)
+            .where(MemoryCoreVersion.memory_id == mem.id)
+            .order_by(MemoryCoreVersion.version.desc())
+            .limit(1)
+        ).scalar_one_or_none()
+
+        core_data = None
+        if core_version:
+            core_data = {
+                "narrative": core_version.narrative,
+                "locked": core_version.locked,
+            }
+
+        result.append({
+            "id": str(mem.id),
+            "title": mem.title,
+            "created_at": mem.created_at.isoformat() if mem.created_at else None,
+            "core": core_data,
+        })
+
+    return {"memories": result}
+
+
 @router.post("", response_model=MemoryRef)
 async def create_memory(
     req: CreateMemoryReq,
@@ -90,6 +138,8 @@ async def create_memory(
                 text_content=req.seed_text,
             )
         )
+        # Enqueue indexing for seed text
+        db.execute(text("insert into memory_event(memory_id, kind) values (:mid, 'INDEX_MEMORY')"), {"mid": str(mem_id)})
 
     # If we reserved an idempotency key, attach resource_id
     if idem_key:
@@ -500,6 +550,8 @@ async def append_layer(
                 meta=req.meta or {},
             )
         )
+        # Enqueue indexing (for captions/metadata in non-text layers)
+        db.execute(text("insert into memory_event(memory_id, kind) values (:mid, 'INDEX_MEMORY')"), {"mid": str(mid)})
     elif kind == "LINK":
         url = (req.meta or {}).get("url") if isinstance(req.meta, dict) else None
         if not url or not isinstance(url, str):
@@ -513,6 +565,8 @@ async def append_layer(
                 meta=req.meta,
             )
         )
+        # Enqueue indexing (for link metadata)
+        db.execute(text("insert into memory_event(memory_id, kind) values (:mid, 'INDEX_MEMORY')"), {"mid": str(mid)})
     else:
         raise HTTPException(status_code=400, detail="unsupported layer kind")
 
@@ -530,7 +584,6 @@ async def append_layer(
         except Exception:
             pass
 
-    # TODO: enqueue indexing job for TEXT/REFLECTION kinds
     return {"layer_id": layer_id, "visibility": mem.visibility}
 
 

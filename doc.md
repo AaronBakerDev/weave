@@ -2,7 +2,7 @@
 
 This is the ordered, practical guide to ship Weave v1 (ChatGPT‑native memory platform) with Canvas Option B (richer cards) and Public Mirror Option B (lightweight follows + RSVP later). It is sequenced so each step unblocks the next.
 
-Date: 2025‑10‑21
+Date: 2025‑10‑24
 
 ---
 
@@ -12,18 +12,21 @@ Date: 2025‑10‑21
   - ChatGPT‑native UI (Next.js on Vercel) + Node MCP shim → Python FastAPI on Railway.
   - Canvas Option B (richer visual cards); Public Mirror Option B (slugs + follows; events/RSVP later).
 - Code present in repo
-  - Backend skeleton: `services/api` (FastAPI, SQLAlchemy, RLS, migrations).
-  - Implemented endpoints:
-    - `POST /v1/memories` (idempotent), `PUT /v1/memories/{id}/core` (draft + lift), `POST /v1/memories/{id}/lock`.
-    - `POST /v1/memories/{id}/layers` (TEXT/REFLECTION/MEDIA/LINK + idempotency).
-    - `POST /v1/artifacts/upload` (S3/B2 stream) and `GET /v1/artifacts/{id}/download` (signed URL).
-  - Not yet implemented: `GET /v1/memories/{id}`, `/permissions`, `/weaves`, `/search/associative`, invites, auth/JWT, indexing pipeline, UI app, MCP route, public mirror.
+  - Backend: `services/api` FastAPI app with memories, search, weave, invites, permissions, public, follows, graph, export, artifacts, rate limiting, JWT auth, and indexing worker (OpenAI optional).
+  - Frontend: `apps/chatgpt-ui` Next.js 14 app with inline Weaver card, canvas, search, memory detail, public/user routes, REST proxy, MCP bridge, and Tailwind 4 pipeline.
+  - Infrastructure: SQL migrations with pgvector + RLS, Docker dev runner (`make dev`), and Railway deployment guide.
+- Still in progress
+  - Reintroduce edge-boost term in hybrid search and enqueue indexing for non-text layers.
+  - Update docs/readme for Docker-less Postgres setups and Node ≥18.17 requirement.
+  - Validate Tailwind upgrade under Node ≥18.17 (current host at 18.15.0).
 
 ---
 
 ## 1) Milestone A — Capture & Recall (Backend‑first)
 
 Goal: A user can create memories, set/lock a core, add layers, search, and open a memory (detail view payload). Deployed on Railway; UI has Inline Weaver + a simple detail page.
+
+Status: **Completed** — leave steps below as implementation record and onboarding reference.
 
 1. Database & Auth Wiring
 - Apply migrations in order: `0001_init.sql`, `0002_idempotency.sql`, `0003_core_locked_at.sql`, then `rls.sql`.
@@ -70,6 +73,8 @@ Acceptance criteria
 
 Goal: Link memories, visualize in a canvas with richer cards, and navigate via zoom‑to‑enter.
 
+Status: **Completed** — Canvas, weave API, and suggestions are live; polish tasks tracked separately.
+
 8. Backend: Weaving
 - Implement `POST /v1/weaves` with pair normalization and uniqueness per relation; prevent self‑links.
 - Extend `GET /v1/memories/{id}` with connected memories preview (IDs + titles, relation).
@@ -93,6 +98,8 @@ Acceptance criteria
 
 Goal: Collaborate on memories with role‑based access; invite flow; begin public presence.
 
+Status: **Completed** — Permissions, invites, public mirror, and follow graph implemented; revisit for enhancements as needed.
+
 11. Backend: Permissions
 - Implement `POST /v1/memories/{id}/permissions` (owner‑only). Upsert `participant` roles, set `visibility`.
 - On PUBLIC, ensure `public_memory_slug` exists; on downgrade, revoke.
@@ -113,6 +120,8 @@ Acceptance criteria
 ---
 
 ## 4) Milestone D — Public Mirror & Accounts (Option B features)
+
+Status: **Partially scoped** — basic follows/public pages exist; events/RSVP and advanced public features remain future enhancements.
 
 14. Follows & Profiles
 - Implement follows list and public author pages (handle + display name).
@@ -174,18 +183,12 @@ Acceptance criteria
 
 ---
 
-## Appendix — Task Index (Do‑First List)
+## Appendix — Task Index (Current Do‑First List)
 
-1) Auth: Implement JWT verification in `app/deps.py:get_user_id`.
-2) Endpoint: `GET /v1/memories/{id}`.
-3) Worker: real embeddings + tsv rebuild; hook events on lock and text layer append.
-4) Endpoint: `GET /v1/search/associative`.
-5) UI: Inline Weaver (create/core/lock/layer) + minimal detail view.
-6) Weaving: `POST /v1/weaves` + Canvas threads; canvas basic implementation.
-7) Permissions: `POST /v1/memories/{id}/permissions` + RLS tighten.
-8) Invites: create/accept + UI flows.
-9) Public mirror: slugs + viewer page + follows.
-10) Security/QA: permission matrix tests, export/delete flow, observability.
+1) Upgrade dev Node.js to ≥18.17 and re-run `npm run build` / `npm run dev` to confirm Tailwind/PostCSS changes.
+2) Search tuning: add edge-boost term and ensure non-text layers enqueue indexing jobs.
+3) Documentation refresh: README + this guide for non-Docker Postgres and feature parity.
+4) Testing: run `/services/api/tests/test_api.py` against a pgvector-enabled Postgres instance; expand UI smoke checks.
 
 ---
 
@@ -194,4 +197,3 @@ Acceptance criteria
 - Railway deploy: `docs/DEPLOY-RAILWAY.md`
 - Backend code: `services/api/...`
 - Specs: `specs/product-spec.md`, `specs/technical-spec.md`
-

@@ -33,7 +33,6 @@ export default async function MemoryPage({ params }: { params: { id: string } })
         </div>
 
         {/* Client-side interactive component */}
-        {/* @ts-expect-error Async to client */}
         <MemoryDetailClient id={params.id} initial={data} />
       </div>
     </main>

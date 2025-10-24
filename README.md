@@ -11,35 +11,26 @@ An explorable memory canvas inside ChatGPT. Capture, organize, and weave memorie
 - **[specs/technical-spec.md](./specs/technical-spec.md)** - Architecture & decisions
 - **[schema.sql](./schema.sql)** - PostgreSQL schema with RLS policies
 
-## Current Status (as of doc.md)
+## Current Status (2025-10-24)
 
-**✅ Decisions locked:**
-- Next.js on Vercel + Node MCP shim → Python FastAPI on Railway
-- Canvas Option B (richer cards) + Public Mirror Option B (follows + slugs)
+**✅ Platform pillars are in place**
+- ChatGPT UI (Next.js 14) implements the marketing home, inline Weaver card, memory detail editor, canvas view, search, and public/user routes.
+- `/api/mcp` bridge translates ChatGPT tool calls into FastAPI requests using the manifest in `chatgpt-mcp-manifest.json`.
+- FastAPI backend ships fully wired routers for memories, search, weave links, permissions, invites, artifacts, public slugs, follows, graph, export, plus health/rate limiting/JWT verification.
+- Indexing worker listens to `memory_event`, rebuilds TSV and pgvector embeddings, and degrades gracefully if `OPENAI_API_KEY` is absent.
 
-**✅ Infrastructure:**
-- Backend skeleton at `services/api/` with partial implementations
-- Endpoints: `POST /v1/memories`, `PUT /v1/memories/{id}/core`, `POST /v1/memories/{id}/lock`, `POST /v1/memories/{id}/layers`, `POST /v1/artifacts/upload`, `GET /v1/artifacts/{id}/download`
+**⏳ Outstanding work (tracked in `ai-docs/sprint-2025-10-24.md`)**
+- Upgrade local Node.js to ≥18.17 to satisfy Next.js runtime requirements and re-verify the Tailwind/PostCSS upgrade.
+- Finish hybrid search parity by reintroducing the edge-boost term and queuing indexing for non-text layers.
+- Refresh README/doc onboarding for Docker-less Postgres setups and updated UI/backend coverage.
+- Harden automated testing (integration tests against live Postgres, Canvas interactions, etc.).
 
-**❌ TODO (see doc.md Appendix for priority order):**
-- Auth (JWT verification)
-- `GET /v1/memories/{id}`, `/search/associative`, `/v1/weaves`, `/permissions`, `/invites`
-- Indexing pipeline (embeddings + TSV)
-- UI: MCP route, Inline Weaver, detail view, Canvas
-- Public mirror (slugs, viewer, follows)
+## Immediate Focus
 
-## Do-First Checklist (from doc.md Appendix)
-
-1. **Auth**: Implement JWT verification in `services/api/app/deps.py:get_user_id`
-2. **Backend**: `GET /v1/memories/{id}` endpoint
-3. **Indexing**: Real embeddings + TSV rebuild pipeline
-4. **Search**: `GET /v1/search/associative` (hybrid scoring: 0.55 cosine + 0.35 TS + 0.10 edge)
-5. **UI**: Inline Weaver card + minimal detail view
-6. **Canvas**: Weaving (`POST /v1/weaves`) + Canvas 2D with threads
-7. **Permissions**: `POST /v1/memories/{id}/permissions` + RLS tightening
-8. **Invites**: Create/accept flow + UI
-9. **Public**: Slugs + viewer page + follows
-10. **Security/QA**: Permission matrix tests, export/delete flow, observability
+1. **Node.js Upgrade**: Use `nvm`, `asdf`, or Volta to install Node ≥18.17, then re-run `npm run build` / `npm run dev` to confirm Tailwind/PostCSS fixes.
+2. **Hybrid Search Polish**: Implement the edge-boost component in `services/api/app/routers/search.py` and ensure layer appends enqueue indexing.
+3. **Docs Refresh**: Update `doc.md`/README onboarding for non-Docker Postgres flows and capture the current feature surface.
+4. **Test Coverage**: Run `services/api/tests/test_api.py` against a local Postgres (with pgvector) and document results; expand UI smoke tests as needed.
 
 ## Milestones
 
@@ -61,17 +52,19 @@ weave/
 ├── services/api/                   # Python FastAPI backend
 │   ├── app/
 │   │   ├── main.py
-│   │   ├── models.py               # SQLAlchemy ORM
-│   │   ├── deps.py                 # Auth + DB (TODO: JWT)
+│   │   ├── models.py               # SQLAlchemy ORM + Pydantic models
+│   │   ├── deps.py                 # JWT auth + RLS-aware sessions
 │   │   ├── routers/
-│   │   │   ├── memories.py         # Partial: create, core, lock, layers
-│   │   │   ├── search.py           # TODO: GET /v1/search/associative
-│   │   │   ├── weave.py            # TODO: POST /v1/weaves
-│   │   │   ├── permissions.py      # TODO: POST /v1/memories/{id}/permissions
-│   │   │   ├── invites.py          # TODO: invite create/accept
-│   │   │   └── artifacts.py        # Done: upload/download
+│   │   │   ├── memories.py         # CRUD, layers, permissions, suggestions
+│   │   │   ├── search.py           # Hybrid search (edge boost pending)
+│   │   │   ├── weave.py            # Memory connections
+│   │   │   ├── invites.py          # Invite create/accept
+│   │   │   ├── follows.py          # Follow graph + feeds
+│   │   │   ├── public.py           # Public slugs
+│   │   │   ├── graph.py            # Canvas graph feed
+│   │   │   └── artifacts.py        # Upload/download proxies
 │   │   ├── workers/
-│   │   │   └── indexing.py         # TODO: embeddings + TSV rebuild
+│   │   │   └── indexing.py         # Embedding + TSV refresh worker
 │   │   └── db/
 │   │       ├── migrations/         # SQL files (run in order)
 │   │       └── rls.sql
@@ -80,14 +73,19 @@ weave/
 │   └── docker-compose.yml
 │
 ├── apps/
-│   ├── chatgpt-ui/                 # Next.js ChatGPT App
+│   ├── chatgpt-ui/                 # Primary Next.js ChatGPT App
 │   │   ├── app/
-│   │   │   ├── api/mcp/            # TODO: MCP protocol bridge
-│   │   │   ├── lib/                # ChatGPT hooks (useSendMessage, etc.)
-│   │   │   └── memory/             # Pages: canvas, detail, search
+│   │   │   ├── api/
+│   │   │   │   ├── mcp/            # JSON-RPC bridge to FastAPI
+│   │   │   │   └── proxy/          # REST proxy to FastAPI
+│   │   │   ├── canvas/             # Canvas experience
+│   │   │   ├── memory/             # Memory detail route
+│   │   │   ├── search/             # Search UI
+│   │   │   ├── p/, u/, a/          # Public slugs, author pages, artifact redirect
+│   │   │   └── globals.css         # Tailwind entry (v4)
 │   │   └── package.json
 │   │
-│   └── next-app/ or similar        # Alternative Next.js structure
+│   └── next-app/                   # Earlier stub preserved for reference
 │
 ├── specs/
 │   ├── product-spec.md             # Vision, UX, features
@@ -117,7 +115,7 @@ weave/
 
 ### One-Command Dev
 
-If you have Docker, Python 3.11+, and Node 18+ installed, you can start everything (Postgres + migrations + FastAPI + Next.js) with a single command from the repo root:
+If you have Docker, Python 3.11+, and Node ≥18.17 installed, you can start everything (Postgres + migrations + FastAPI + Next.js) with a single command from the repo root:
 
 ```
 make dev
@@ -139,7 +137,7 @@ make down && docker stop weave-pg
 ```bash
 cd services/api
 
-# Run migrations in order (PostgreSQL must be running)
+# Run migrations in order (PostgreSQL must be running and pgvector enabled)
 psql "$DATABASE_URL" -f app/db/migrations/0001_init.sql
 psql "$DATABASE_URL" -f app/db/migrations/0002_idempotency.sql
 psql "$DATABASE_URL" -f app/db/migrations/0003_core_locked_at.sql
@@ -152,6 +150,8 @@ source .venv/bin/activate
 pip install -r requirements.txt
 python -m uvicorn app.main:app --reload --port 8000
 ```
+
+> **No Docker?** Use a local Postgres 14+ instance with the `vector` extension installed. Update `DATABASE_URL` (for example `postgresql://localhost:5432/weave`) before running the migrations above.
 
 ### 2. Start Indexing Worker (optional)
 
