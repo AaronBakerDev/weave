@@ -1,13 +1,5 @@
 # Render Infrastructure as Code
-# Deploy entire Weave backend by pushing this file to GitHub
-
-databases:
-  - name: weave-db
-    databaseName: weave
-    user: weave_user
-    region: oregon
-    plan: starter  # or 'free' for testing
-    ipAllowList: []  # empty = allow all
+# Deploy Weave backend services (database already exists manually)
 
 services:
   # FastAPI Web Service
@@ -28,11 +20,9 @@ services:
       - key: PORT
         value: "8000"
 
-      # Database connection (auto-linked)
+      # Database connection (set manually to link to existing weave-db)
       - key: DATABASE_URL
-        fromDatabase:
-          name: weave-db
-          property: connectionString
+        sync: false  # Will be set manually in Render dashboard
 
       # OpenAI (you'll set this manually in dashboard for security)
       - key: OPENAI_API_KEY
@@ -88,11 +78,9 @@ services:
       - key: PYTHON_VERSION
         value: "3.11.0"
 
-      # Database connection (auto-linked)
+      # Database connection (set manually to link to existing weave-db)
       - key: DATABASE_URL
-        fromDatabase:
-          name: weave-db
-          property: connectionString
+        sync: false  # Will be set manually in Render dashboard
 
       # OpenAI (you'll set this manually)
       - key: OPENAI_API_KEY
