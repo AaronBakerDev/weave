@@ -89,10 +89,13 @@ In Render Dashboard, add these **manually** (they're marked `sync: false` for se
 OPENAI_API_KEY=sk-proj-your-key-here
 JWT_ISSUER=https://your-clerk-issuer.clerk.accounts.dev
 JWT_JWKS_URL=https://your-clerk-issuer.clerk.accounts.dev/.well-known/jwks.json
-AWS_ACCESS_KEY_ID=your-access-key
-AWS_SECRET_ACCESS_KEY=your-secret-key
-AWS_S3_BUCKET=weave-prod
-S3_ENDPOINT_URL=https://s3.us-east-005.backblazeb2.com  # Optional: Backblaze
+
+# Backblaze B2 (see BACKBLAZE-B2-SETUP.md for setup)
+AWS_ACCESS_KEY_ID=your-b2-key-id
+AWS_SECRET_ACCESS_KEY=your-b2-application-key
+AWS_S3_BUCKET=weave-prod-yourname
+AWS_REGION=us-west-004  # Your B2 region
+S3_ENDPOINT_URL=https://s3.us-west-004.backblazeb2.com  # Your B2 endpoint
 ```
 
 ### For `weave-indexing-worker` service:

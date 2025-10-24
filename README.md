@@ -107,7 +107,7 @@ weave/
 | **Database** | PostgreSQL 14+ + pgvector | RLS policies for multi-tenancy |
 | **Search** | Hybrid scoring | 0.55 cosine + 0.35 BM25 + 0.10 edge boost |
 | **Embeddings** | OpenAI `text-embedding-3-large` | 1536 dimensions |
-| **Storage** | S3-compatible (Backblaze B2) | Media attachments via signed URLs |
+| **Storage** | Backblaze B2 | S3-compatible, 10GB free, videos/images via signed URLs |
 | **Auth** | JWT | JWKS URL-based verification |
 | **Deployment** | Vercel + Railway | Fully managed, no DevOps |
 
@@ -202,13 +202,19 @@ hybrid_score = 0.55 * cosine_similarity + 0.35 * ts_rank + 0.10 * edge_boost
 
 ## Deployment
 
-See `docs/DEPLOY-RAILWAY.md` for Railway setup.
+See deployment guides:
+- **`DEPLOY.md`** - Quick deployment guide (Render + Vercel)
+- **`RENDER-SETUP.md`** - Detailed Render backend setup
+- **`VERCEL-SETUP.md`** - Vercel frontend setup
+- **`BACKBLAZE-B2-SETUP.md`** - Backblaze B2 storage (videos/images)
+- **`DOMAIN-SETUP.md`** - Custom domain configuration
 
 **Key env vars:**
-- `DATABASE_URL` (Railway PostgreSQL)
-- `JWT_JWKS_URL` (auth provider)
-- `OPENAI_API_KEY`
-- `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY` (S3/B2)
+- `DATABASE_URL` (Render PostgreSQL)
+- `JWT_JWKS_URL` (Clerk auth)
+- `OPENAI_API_KEY` (embeddings)
+- `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY` (Backblaze B2)
+- `S3_ENDPOINT_URL` (Backblaze B2 endpoint)
 - `ALLOWED_ORIGINS` (CORS)
 
 ## Next Steps

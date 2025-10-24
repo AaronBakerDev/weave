@@ -8,6 +8,23 @@ Weave is a ChatGPT-native memory platform that enables users to capture, organiz
 
 **Current Status (2025-10-24):** Platform pillars are complete. Milestones A-C (Capture/Recall, Weaving/Canvas, Sharing/Invites) are fully implemented and deployed.
 
+## Platform Decision (2025-10-24)
+
+**Decision:** Keep current FastAPI + Railway + PostgreSQL stack ✅
+
+**Research Completed:** Comprehensive evaluation of Xano, Supabase, and Cloudflare as potential replacements. All three evaluated as insufficient due to architectural misalignments (lack of RLS, pgvector, event sourcing, or requiring major rewrites).
+
+**Rationale:**
+- Already battle-tested and production-ready
+- Team expertise in Python, FastAPI, PostgreSQL
+- No architectural misalignments
+- Cost-effective ($75/month)
+- Minimal risk, maximum velocity
+
+**Archive:** Research documents moved to `docs/research-archive/` for future reference.
+
+See `docs/research-archive/README.md` for detailed platform evaluation findings.
+
 ## Quick Start Development
 
 ### One-Command Dev (Recommended)
@@ -368,13 +385,23 @@ pytest tests/test_api.py  # Requires PostgreSQL with pgvector
 
 ## Outstanding Work (as of 2025-10-24)
 
-From `ai-docs/sprint-2025-10-24.md`:
+### Platform Research Complete ✅
+- Evaluated Xano (not recommended)
+- Evaluated Supabase (potentially viable but requires 6-10 week rewrite)
+- Evaluated Cloudflare (partially viable but requires 6-8 week rewrite)
+- **Decision:** Continue with FastAPI + Railway + PostgreSQL
 
+### Feature Development (Milestone D & Beyond)
 1. **Node.js Upgrade** - Requires ≥18.17 for Next.js 14 (currently 18.15.0)
-2. **Edge Boost Implementation** - Add edge-boost term to hybrid search scoring
-3. **Indexing Enhancements** - Queue indexing for non-text layers
+2. **Edge Boost Implementation** - Add edge-boost term to hybrid search scoring (0.10 weight)
+3. **Indexing Enhancements** - Queue indexing for non-text layers (IMAGE/VIDEO/AUDIO)
 4. **Documentation Refresh** - Update for Docker-less Postgres setup
 5. **Test Coverage** - Integration tests, RLS policy tests, Canvas tests
+6. **Search Quality** - Improve hybrid search scoring normalization and pagination
+
+### Storage
+- **Continue using Backblaze B2** for media artifacts (S3-compatible API)
+- Cost-effective ($5-15/month) with no egress fees
 
 ## Key Files to Reference
 

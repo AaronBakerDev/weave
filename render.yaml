@@ -44,21 +44,21 @@ services:
       - key: JWT_JWKS_URL
         sync: false
 
-      # AWS S3 / Backblaze B2 (set manually for security)
+      # Backblaze B2 Storage (set manually - see BACKBLAZE-B2-SETUP.md)
       - key: AWS_ACCESS_KEY_ID
-        sync: false
+        sync: false  # B2 Application Key ID
 
       - key: AWS_SECRET_ACCESS_KEY
-        sync: false
+        sync: false  # B2 Application Key
 
       - key: AWS_S3_BUCKET
-        sync: false
+        sync: false  # Your B2 bucket name (e.g., weave-prod-yourname)
 
       - key: AWS_REGION
-        value: us-east-1
+        sync: false  # B2 region (e.g., us-west-004)
 
       - key: S3_ENDPOINT_URL
-        sync: false
+        sync: false  # B2 endpoint (e.g., https://s3.us-west-004.backblazeb2.com)
 
       # CORS (update with your domains)
       - key: ALLOWED_ORIGINS

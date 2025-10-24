@@ -135,12 +135,12 @@ JWT_AUDIENCE=weave
 JWT_ISSUER=https://your-clerk-issuer.clerk.accounts.dev
 JWT_JWKS_URL=https://your-clerk-issuer.clerk.accounts.dev/.well-known/jwks.json
 
-# AWS S3 / Backblaze B2
+# Backblaze B2 (recommended - see BACKBLAZE-B2-SETUP.md)
 AWS_ACCESS_KEY_ID=your-access-key
 AWS_SECRET_ACCESS_KEY=your-secret-key
-AWS_S3_BUCKET=weave-prod
-AWS_REGION=us-east-1
-S3_ENDPOINT_URL=https://s3.us-east-005.backblazeb2.com  # Optional: for Backblaze B2
+AWS_S3_BUCKET=weave-prod-yourname
+AWS_REGION=us-west-004  # Your B2 region
+S3_ENDPOINT_URL=https://s3.us-west-004.backblazeb2.com  # Your B2 endpoint
 
 # CORS
 ALLOWED_ORIGINS=https://chatgpt-ui-ivory.vercel.app,https://app.weweavee.com,https://weweavee.com
